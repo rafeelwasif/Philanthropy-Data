@@ -1,0 +1,536 @@
+---
+title: "Islamic_NGOs_Final_Inshallah_IA"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(dplyr)
+#library(plm)
+library(stringr)
+library(anytime)
+library(stargazer)
+library(xtable)
+
+library(lmerTest)
+library(ggplot2)
+library(sjPlot)
+library(sjlabelled)
+library(sjmisc)
+library(psych)
+library(zoo)
+library(tidyverse)
+library(sjPlot)
+library(sjmisc)
+library(ggplot2)
+#library(plyr)
+
+```
+
+
+
+
+
+```{r}
+
+# Loading the Data from 1998-2004
+
+setwd("H:/Islamic_NGOs/Files_1998_2004")
+listcsv <- dir(pattern = "*.csv") # creates the list of 
+
+ldf <- list()
+for (k in 1:length(listcsv)){
+ ldf[[k]] <- read.csv(listcsv[k])
+}
+
+data_complete <- rbindlist(ldf, fill = TRUE)
+
+
+# Creating Patterns of Islamic Nonprofits
+
+Islam_pattern_complete <- grep(pattern = "ISLAM", data_complete$NAME, ignore.case = TRUE)
+Muslim_pattern_complete <- grep(pattern = "MUSLIM", data_complete$NAME, ignore.case = TRUE)
+NGOs_X40 <-  grep(pattern = "X40", data_complete$nteeFinal, ignore.case = TRUE)
+
+
+# Chrisitan Nonprofits
+Christ_pattern_complete <- grep(pattern = "CHRIST", data_complete$NAME, ignore.case = TRUE)
+Christian_pattern_complete <- grep(pattern = "CHRISTIAN", data_complete$NAME, ignore.case = TRUE)
+NGOs_X <- grep(pattern = "X", data_complete$nteeFinal, ignore.case = TRUE)
+
+
+# Combining Data Muslims Patterns
+Islam_Muslim_X40_pattern <- unique(c(Islam_pattern_complete, Muslim_pattern_complete, NGOs_X40))
+
+
+# Combining Data Christian Patterns
+
+Christ_Christian_X_pattern <- unique(c(Christ_pattern_complete, Christian_pattern_complete, NGOs_X))
+
+
+
+
+Data_Islam_Muslim_X40 <- data_complete[Islam_Muslim_X40_pattern,]
+Data_Christ_Christian_X <- data_complete[Christ_Christian_X_pattern,]
+```
+
+
+```{r}
+# Muslim Relief Organizations
+
+muslim_relief_ngos <- read.csv("file:///Z:/Islamic_NGOs_FInal/Muslim_relief_NGOs_List_EIN.csv")
+muslim_relief_ngos_ein <- str_replace_all(as.character(muslim_relief_ngos[,2]), "[[:punct:]]", " ")
+muslim_relief_ngos_ein <- gsub("[[:space:]]", "", muslim_relief_ngos_ein) 
+na.omit(muslim_relief_ngos_ein)
+as.character(muslim_relief_ngos[,2])
+muslim_relief_ngos_ein[muslim_relief_ngos_ein != ""] 
+
+muslim_relief_data <- subset(data_complete, EIN %in% muslim_relief_ngos_ein)
+
+
+muslim_relief_ngos_ein <- str_replace_all(as.character(muslim_relief_ngos[,2]), "[[:punct:]]", " ")
+muslim_relief_ngos_ein <- gsub("[[:space:]]", "", muslim_relief_ngos_ein) 
+na.omit(muslim_relief_ngos_ein)
+as.character(muslim_relief_ngos[,2])
+muslim_relief_ngos_ein[muslim_relief_ngos_ein != ""] 
+
+muslim_relief_data <- subset(data_complete, EIN %in% muslim_relief_ngos_ein)
+
+islam_muslim_X40_relief <-rbind.data.frame(Data_Islam_Muslim_X40, muslim_relief_data)
+```
+
+
+
+```{r}
+# Relief NGOs
+
+
+NGOs_Relief <- grep(pattern = "Q33", data_complete$nteeFinal, ignore.case = TRUE)
+
+Data_NGOs_Relief <- data_complete[NGOs_Relief,]
+
+# Finding list of Christian Relief Organizations
+
+Christian_relief <- read.csv('International FBOs_1.csv')
+Christian_relief_2 <- read.csv('Christian_Audit.csv')
+Christian_relief_3 <- read.csv('Chrisitan_Charities_Action_Aid.csv')
+
+
+
+# Making list of Christian Organizations by Name
+Christ_pattern_complete <- grep(pattern = "CHRIST", Data_NGOs_Relief$NAME, ignore.case = TRUE)
+Christian_pattern_complete <- grep(pattern = "CHRISTIAN", Data_NGOs_Relief$NAME, ignore.case = TRUE)
+Catholic_pattern_complete <- grep(pattern = "CATHOLIC", Data_NGOs_Relief$NAME, ignore.case = TRUE)
+SAMARITANS_pattern_complete <- grep(pattern = "SAMARITANS", Data_NGOs_Relief$NAME, ignore.case = TRUE)
+JESUS_pattern_complete <- grep(pattern = "JESUS", Data_NGOs_Relief$NAME, ignore.case = TRUE)
+LUTHERAN_pattern_complete <- grep(pattern = "LUTHERAN", Data_NGOs_Relief$NAME, ignore.case = TRUE)
+
+christian_relief_pattern <- unique(c(Christ_pattern_complete, Christian_pattern_complete, Catholic_pattern_complete, SAMARITANS_pattern_complete, JESUS_pattern_complete, LUTHERAN_pattern_complete))
+
+
+# Finding list of Christian Organizations
+
+tmp <- sapply(phrases,function(x)regmatches(Data_NGOs_Relief$NAME,gregexpr(paste0("\\b",x,"\\b"),Data_NGOs_Relief$NAME,ignore.case = T)))
+
+#tmp <- sapply(phrases,function(x)regmatches(data_complete$NAME,gregexpr(paste0("\\b",x,"\\b"),data_complete$NAME,ignore.case = T)))
+
+
+# Making list of Christian Organizations
+
+phrases <-c(as.character(Christian_relief$Name), as.character(Christian_relief_2$Organization), as.character(Christian_relief_3 )    
+phrases_try <- c(as.character(Christian_relief_3$Name), paste(as.character(Christian_relief_3$Name), "INC"))
+
+phrases <- c(phrases, INC_NAMES)
+phrases <- c(phrases, phrases_try)
+INC_NAMES <- paste(phrases, 'INC')
+
+# Combining all the Data for Christian Organizations
+
+christian_relief_data <- subset(data_complete, NAME %in% tmp)
+Data_Christian_relief <- Data_NGOs_Relief[christian_relief_pattern,]
+christian_relief <- rbind.data.frame(christian_relief_data, Data_Christian_relief)
+
+
+```
+
+
+
+
+```{r}
+
+Data_Islam_Muslim_X40_X <- rbind.data.frame(islam_muslim_X40_relief, Data_Christ_Christian_X, christian_relief)
+
+
+Data_NGOs_Relief_Islam <- rbind.data.frame(Data_NGOs_Relief, muslim_relief_data)
+
+
+Data_NGOs_Relief_Islam_clean <- data_clean_1998_2004(Data_NGOs_Relief_Islam)
+
+
+```
+
+
+
+```{r}
+data_clean_1998_2004 <- function(data) {
+data <- as.data.frame(data)
+data <- data[ ! duplicated( data[ c("EIN" , "FISYR") ] ) , ]
+
+data <- data[which(!is.na(data$FISYR)),]
+
+data$post_2001 <- ifelse(data$FISYR > 2001,   1, 0)
+data$post_2000 <- ifelse(data$FISYR == 2001,   1, 0)
+data$post_1999 <- ifelse(data$FISYR > 1999,   1, 0)
+data$year_2002 <- ifelse(data$FISYR == 2002,   1, 0)
+data$post_911 <- ifelse(data$FISYR > 2000,   1, 0)
+data$X40 <- ifelse(data$NTEE == "X40", 1, 0)
+data$Year <- data$FISYR - 1998
+
+data$X40_Islamic_Muslim <- ifelse(data$EIN %in% Data_Islam_Muslim_X40$EIN, 1, 0)
+data$X40_Islamic_Muslim_relief <- ifelse(data$EIN %in% islam_muslim_X40_relief$EIN, 1, 0)
+
+
+
+data$interaction_term_X40 <- data$post_911 * data$X40
+
+data$GRREC <- data$GRREC/1000 
+data$TOTREV <- data$TOTREV/1000
+data$relief <- ifelse(data$EIN %in% muslim_relief_data_final$EIN, 1,0)
+#data$interaction_term_X40_Islamic_Muslim <- data$Post_911 * data$X40_Islamic_Muslim
+data <- filter(data, FISYR > 1997 & FISYR < 2005)
+
+data$education <-ifelse ((data$ACTIV1 >=30 & data$ACTIV1 <=59) |
+(data$ACTIV2 >=30  & data$ACTIV2 <=59) |  (data$ACTIV3 >=30 & data$ACTIV3 <=59) , 1, 0)
+
+
+data$religious_activity <-ifelse ((data$ACTIV1 >=1 & data$ACTIV1 <=29) |
+(data$ACTIV2 >=1  & data$ACTIV2 <=29) |  (data$ACTIV3 >=1 & data$ACTIV3 <=29) , 1, 0)
+
+data$culture <-ifelse ((data$ACTIV1 >=60 & data$ACTIV1 <=119) |
+(data$ACTIV2 >=60  & data$ACTIV2 <=119) |  (data$ACTIV3 >=60 & data$ACTIV3 <=119) , 1, 0)
+
+
+return(data)
+
+}
+
+
+```
+
+
+```{r}
+islam_muslim_X40_relief_clean <- data_clean_1998_2004(islam_muslim_X40_relief)
+Data_Islam_Muslim_X40_X_clean <- data_clean_1998_2004(Data_Islam_Muslim_X40_X)
+
+
+```{r}
+islam_muslim_X40_relief_clean <- data_clean_1998_2004(islam_muslim_X40_relief)
+Data_Islam_Muslim_X40_X_clean <- data_clean_1998_2004(Data_Islam_Muslim_X40_X)
+
+
+Data_NGOs_Relief_Islam_clean <- data_clean_1998_2004(Data_NGOs_Relief_Islam)
+
+
+Data_NGOs_Relief_Islam_clean <- data_clean_1998_2004(Data_NGOs_Relief_Islam)
+
+Christian_relief_org
+
+
+unique(as.character(muslim_relief_data$NAME))
+```
+
+```{r}
+relief_christian_muslim <- rbind.data.frame(christian_relief, muslim_relief_data)
+relief_christian_muslim_clean <- data_clean_1998_2004(relief_christian_muslim)
+relief_christian_muslim_balanced <- make.pbalanced(relief_christian_muslim_clean, index = c("EIN", "FISYR"), balance.type = "shared.individuals")
+
+lme_2001_clean_relief_islam_christ <- lmer(TOTREV ~     post_911  * X40_Islamic_Muslim_relief + culture + religious_activity + education   + Year + (1|EIN) , relief_christian_muslim_clean)
+
+
+lme_2001_balanced_relief_islam_christ <- lmer(TOTREV ~     post_2000  * X40_Islamic_Muslim_relief + culture + religious_activity + education   + Year + (1|EIN) , relief_christian_muslim_balanced)
+
+
+
+summary(lme_2001_clean_relief_islam_christ)
+
+```
+
+
+```{r}
+# Islamic Relief Versus Other Domestic Islamic NGOs for year 2001 for clean data.
+
+lme_2001_clean_relief <- lmer(TOTREV ~     post_2000  * relief + culture + religious_activity + education   + Year + (1|EIN) , islam_muslim_X40_relief_clean)
+
+summary(lme_2001_clean_relief)
+
+# Islamic Relief Versus Other Domestic Islamic NGOs for year 2002 for clean data.
+
+lme_2002_clean_relief <- lmer(TOTREV ~     post_911  * relief + culture + religious_activity + education   + Year + (1|EIN) , islam_muslim_X40_relief_clean)
+
+summary(lme_2002_clean_relief)
+
+
+
+# Islamic NGOs Versus Others.
+
+lme_2001_islam_non_islam <- lmer(TOTREV ~     post_911  * X40_Islamic_Muslim_relief   +  Year + (1|EIN) + relief + culture + religious_activity + education   , Data_Islam_Muslim_X40_X_clean)
+
+summary(lme_2001_islam_non_islam)
+
+
+```
+
+
+```{r}
+Data_NGOs_Relief_Islam_clean_cumsum <- Data_NGOs_Relief_Islam_clean %>% group_by(FISYR, relief) %>%  summarize(cum.sum = sum(GRREC), mean =mean(GRREC))
+ 
+ggplot(data = Data_NGOs_Relief_Islam_clean_cumsum, aes(x = FISYR, y = (log(cum.sum)))) +       
+  geom_line(aes(group = as.factor(relief), color = as.factor(relief))) + geom_point()  + scale_color_discrete(name = "NGO Type", labels = c("non-Islamic", "Islamic")) + ylab("Change in Total Donations (Log)") +
+ xlab("Fiscal Year") + scale_x_continuous(limits=c(1998, 2004))
+```
+
+
+
+```{r}
+relief_christian_muslim <- rbind.data.frame(christian_relief, muslim_relief_data)
+relief_christian_muslim_clean <- data_clean_1998_2004(relief_christian_muslim)
+
+
+lme_2001_clean_relief_islam_christ <- lmer(TOTREV ~     post_911  * X40_Islamic_Muslim_relief + culture + religious_activity + education   + Year + (1|EIN) , relief_christian_muslim_clean)
+
+summary(lme_2001_clean_relief_islam_christ)
+
+```
+```{r}
+Relief_Islam_clean_cumsum <- relief_christian_muslim_clean %>% group_by(FISYR, X40_Islamic_Muslim_relief) %>%  summarize(cum.sum = sum(GRREC), mean =mean(GRREC))
+ 
+ggplot(data = Relief_Islam_clean_cumsum, aes(x = FISYR, y = cum.sum)) +       
+  geom_line(aes(group = as.factor(X40_Islamic_Muslim_relief), color = as.factor(X40_Islamic_Muslim_relief))) + geom_point()  + scale_color_discrete(name = "NGO Type", labels = c("non-Islamic", "Islamic")) + ylab("Change in Total Donations (Log)") +
+ xlab("Fiscal Year") + scale_x_continuous(limits=c(1998, 2004))
+```
+
+
+Final Datasets
+
+```{r}
+Christ_pattern_complete <- grep(pattern = "CHRIST", data_complete$NAME, ignore.case = TRUE)
+Christian_pattern_complete <- grep(pattern = "CHRISTIAN", data_complete$NAME, ignore.case = TRUE)
+NGOs_X <- grep(pattern = "X", data_complete$nteeFinal, ignore.case = TRUE)
+
+Christ_Christian_X_pattern <- unique(c(Christ_pattern_complete, Christian_pattern_complete, NGOs_X))
+
+
+Data_Christ_Christian_X <- data_complete[Christ_Christian_X_pattern,]
+
+Data_Christ_Christian_X_relief <- rbind.data.frame(christian_relief, Data_Christ_Christian_X)
+
+
+Data_Islam_Muslim_X40_X_relief <- rbind.data.frame(Data_Christ_Christian_X_relief, islam_muslim_X40_relief)
+
+Data_Islam_Muslim_X40_X_relief_clean <- data_clean_1998_2004(Data_Islam_Muslim_X40_X_relief)
+
+# Removing Islamic Zakat Foundation
+
+Data_Islam_Muslim_X40_X_relief_clean <- filter(Data_Islam_Muslim_X40_X_relief_clean, NAME != "ISLAMIC-AMERICAN ZAKAT FOUNDATION")
+
+# Running Regression of Islamic versus non-Islamic religious nonprofits
+
+lme_2001_islam_non_islam <- lmer(TOTREV ~     post_911  * X40_Islamic_Muslim_relief   +  Year + (1|EIN) + relief + culture + religious_activity + education   , Data_Islam_Muslim_X40_X_relief_clean)
+
+summary(lme_2001_islam_non_islam)
+
+
+
+```
+
+```{r}
+#Comparing Islamic Relief NGOs with other Islamic Organizations
+Islam_pattern_relief <- grep(pattern = "Islam", Data_NGOs_Relief$NAME, ignore.case = TRUE)
+
+Data_Islam_relief_name <- Data_NGOs_Relief[Islam_pattern_relief,]
+
+muslim_relief_data_final <- rbind.data.frame(muslim_relief_data, Data_Islam_relief_name)
+
+islam_muslim_X40_relief_final <- rbind.data.frame(islam_muslim_X40_relief, Data_Islam_relief_name)
+
+islam_muslim_X40_relief_final_clean <- data_clean_1998_2004(islam_muslim_X40_relief_final)
+
+islam_muslim_X40_relief_final_clean <- filter(islam_muslim_X40_relief_final_clean, NAME != "ISLAMIC-AMERICAN ZAKAT FOUNDATION")
+
+```
+
+
+```{r}
+# Islamic Relief Versus Other Domestic Islamic NGOs for year 2001 for clean data.
+
+lme_2001_islam_relief_domestic <- lmer(TOTREV ~     post_2000  * relief + culture + religious_activity + education   + Year + (1|EIN) , islam_muslim_X40_relief_final_clean)
+
+summary(lme_2001_clean_relief)
+
+stargazer(lme_2001_islam_relief_domestic, out = "islam_relief_domestic_2001.html")
+
+# Islamic Relief Versus Other Domestic Islamic NGOs for year 2001 for clean data by having a dummy for 2000.
+
+lme_2001_2000_clean_relief <- lmer(TOTREV ~   post_1999 * relief +   post_2000  * relief + culture + religious_activity + education   + Year + (1|EIN) , islam_muslim_X40_relief_final_clean)
+
+summary(lme_2001_2000_clean_relief)
+
+stargazer(lme_2001_2000_clean_relief, out = "islam_relief_lagged_domestic_911.html")
+
+
+# Islamic Relief Versus Other Domestic Islamic NGOs for year 2002 for clean data.
+
+lme_911_islam_relief_domestic <- lmer(TOTREV ~     post_911  * X40_Islamic_Muslim_relief   +  Year + (1|EIN) + relief + culture + religious_activity + education   , Data_Islam_Muslim_X40_X_relief_clean)
+
+summary(lme_911_islam_relief_domestic)
+
+stargazer(lme_911_islam_relief_domestic, out = "islam_relief_domestic_911.html")
+
+# Islamic Relief Versus Other Relief organizations for year 2001.
+
+lme_islam_relief_all_2001 <- lmer(TOTREV ~     post_2000  * X40_Islamic_Muslim_relief + culture + religious_activity + education   + Year + (1|EIN)   , Data_NGOs_Relief_Islam_clean)
+
+
+summary(lme_islam_relief_all_2001)
+stargazer(lme_islam_relief_all_2001, out = "relief_islam_all.html")
+
+# Islamic Relief Versus Christian Relief Organizations with 9/11 as exogenous shocks.
+
+lme_911_clean_relief_islam_christ <- lmer(TOTREV ~     post_911  * X40_Islamic_Muslim_relief + culture + religious_activity + education   + Year + (1|EIN) , relief_christian_muslim_clean)
+
+
+summary(lme_911_clean_relief_islam_christ)
+
+
+# Islamic Relief Versus Christian Relief Organizations with 9/11 as exogenous shocks.
+
+lme_2001_clean_relief_islam_christ <- lmer(TOTREV ~     post_2000  * X40_Islamic_Muslim_relief + culture + religious_activity + education   + Year + (1|EIN) , Data_Islam_Muslim_X40_X_relief_clean)
+
+
+summary(lme_2001_clean_relief_islam_christ)
+stargazer(lme_2001_clean_relief_islam_christ, out = "relief_islam_christian.html")
+
+
+
+# Islamic NGOs Versus Others.
+
+
+lme_911_islam_non_islam <- lmer(TOTREV ~     post_911  * X40_Islamic_Muslim_relief   +  Year + (1|EIN) + relief + culture + religious_activity + education   , Data_Islam_Muslim_X40_X_relief_clean)
+
+summary(lme_911_islam_non_islam)
+
+stargazer(lme_911_islam_non_islam, out = "islam_christian_final.html")
+```
+
+```
+
+```{r}
+
+islam_muslim_X40_relief_final_clean$Large <- ifelse(islam_muslim_X40_relief_final_clean$TOTREV > 318.63, 1, 0)
+Data_Islam_Muslim_X40_X_relief_clean$Large <- ifelse(Data_Islam_Muslim_X40_X_relief_clean$TOTREV > 435.8, 1, 0)
+
+
+lme_islam_large_all_2001 <- lmer(TOTREV ~     post_911  * Large + culture + religious_activity + relief+  education   + Year + (1|EIN)   , islam_muslim_X40_relief_final_clean)
+
+summary(lme_islam_large_all_2001)
+
+
+lme_2001_clean_relief_islam_christ <- lmer(TOTREV ~     post_2000  * X40_Islamic_Muslim_relief + culture + religious_activity + education   + Year + (1|EIN) , Data_Islam_Muslim_X40_X_relief_clean)
+
+
+
+Data_Islam_Muslim_X40_X_relief_clean_large <- filter(Data_Islam_Muslim_X40_X_relief_clean, Large == 1)
+
+lme_911_large <- lmer(TOTREV ~     post_911  * X40_Islamic_Muslim_relief + culture + religious_activity + education   + Year + (1|EIN) , Data_Islam_Muslim_X40_X_relief_clean)
+
+summary(lme_911_large)
+
+```
+Interrupted Time Series
+
+```{r}
+
+Int_time_series <- lm(TOTREV ~   post_911 + relief  + culture + religious_activity + education    , islam_muslim_X40_relief_final_clean)
+
+
+summary(Int_time_series)
+
+```
+
+```{r}
+islam_muslim_X40_relief_clean <- read.csv("islam_muslim_X40_relief_clean.csv")
+
+Relief_Islam_cumsum <- islam_muslim_X40_relief_clean %>% group_by(relief, FISYR) %>% summarize(cum.sum = sum(GRREC), mean =mean(GRREC), median = median(GRREC), number = n(), min = min(GRREC), max = max(GRREC)) %>%
+ filter(FISYR < 2005)
+
+non_relief_islam <- filter(Relief_Islam_cumsum, relief == 0)
+relief_islam <- filter(Relief_Islam_cumsum, relief == 1)
+
+relief_non_relief_islam_final <- rbind.data.frame(non_relief_islam, relief_islam)
+
+
+print.xtable(xtable(round(relief_non_relief_islam_final, 3)), type = 'html', file = "relief_non_relief_islam.html")
+
+ggplot(data = Relief_Islam_cumsum, aes(x = FISYR, y = (log(cum.sum)))) +       
+  geom_line(aes(group = as.factor(relief), color = as.factor(relief))) + geom_point()  + scale_color_discrete(name = "NGO Type", labels = c("Domestic", "International Relief")) + ylab("Change in Total Donations (Log)") +
+ xlab("Fiscal Year") + scale_x_continuous(limits=c(1998, 2004))   +
+ geom_vline(xintercept = 2000, linetype="dotted", 
+                color = "blue", size=1.5) + geom_text(aes(label = "Post 9/11", x = 2001, y = 18.5)) + scale_y_continuous(limits = c(9, 12))
+
+
+
+
+
+
+```
+
+
+```{r}
+
+Data_Islam_Muslim_X40_X_clean <- read.csv("Data_Islam_Muslim_X40_X_clean.csv")
+
+
+Islam_non_Islam_cumsum <- Data_Islam_Muslim_X40_X_clean %>% group_by(X40_Islamic_Muslim_relief, FISYR) %>% summarize(cum.sum = sum(GRREC), mean =mean(GRREC), median = median(GRREC), number = n(), min = min(GRREC), max = max(GRREC)) %>%
+ mutate(Post_911 = ifelse(FISYR==2001, 1,0)) %>% filter(FISYR < 2005)
+
+Islam_cum_sum <- filter(Islam_non_Islam_cumsum, X40_Islamic_Muslim_relief == 1)
+Non_Islam_cum_sum <- filter(Islam_non_Islam_cumsum, X40_Islamic_Muslim_relief == 0)
+
+Islam_cum_final <- rbind.data.frame(Islam_cum_sum, Non_Islam_cum_sum)
+
+print.xtable(xtable(round(Islam_cum_final, 2)), type = 'html', file = 'islam_non_islam_cum.html')
+
+
+islamic_pre_911 <- filter(Data_Islam_Muslim_X40_X_clean, post_911 == 0 & X40_Islamic_Muslim_relief ==1 )
+non_islamic_pre_911 <- filter(Data_Islam_Muslim_X40_X_clean, post_911 == 0 & X40_Islamic_Muslim_relief == 0)
+
+lme_islamic_pre_911 <- lmer(TOTREV ~     Year + (1|EIN) , islamic_pre_911)
+lme_non_islamic_pre_911 <- lmer(TOTREV ~     Year + (1|EIN) , non_islamic_pre_911)
+
+plot_models(lme_islamic_pre_911, lme_non_islamic_pre_911, legend.title = "Difference between Pre 9/11 Yearly Trend of Islamic and non-Islamic Nonprofits", auto.label = FALSE, prefix.labels = c("Islamic", "Non-Islamic"), m.labels = c("Islamic", "Non-Islamic"))
+summary(lme_islamic_pre_911)
+summary(lme_non_islamic_pre_911)
+
+
+```
+
+```{r}
+
+
+tgc <- summarySE(islam_muslim_X40_relief_clean, measurevar="TOTREV", groupvars=c("FISYR","relief"))
+pd <- position_dodge(0.1)
+
+ggplot(tgc, aes(x=FISYR, y=log(TOTREV), colour=relief)) + 
+    geom_errorbar(aes(ymin=TOTREV-se, ymax=TOTREV+se), width=.1, , position=pd) 
+    
+    +
+    geom_line() +
+    geom_point()
+
+
+
+
+```
+
+
+
