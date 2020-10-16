@@ -1,0 +1,180 @@
+---
+title: "Lily_Panel_Final"
+output: html_document
+---
+
+
+```{r}
+library(foreign)
+library(dplyr)
+library(lmerTest)
+library(naniar)
+library(DataCombine)
+```
+
+
+
+
+```{r}
+file <- read.dbf("C:/Users/rafeel/Downloads/J282344.dbf")
+
+file$person <- file$ER30001 * 1000 + file$ER30002
+
+file_2001_head <- filter(file, ER33603 == "10")
+
+data_gdp_ncp <- read.csv("data_gdp_growth_us_2_no_capita.csv")
+data_gdp_ncp$year <- as.numeric(substring(as.character(data_gdp_ncp$date), 7,11))
+
+data_gdp_ncp <- data_gdp_ncp %>%   mutate(GDP = GDP.Growth....)
+```
+
+
+
+```{r}
+
+file_2001_head <- file_2001_head %>% mutate(health_2001 = ER20065) %>% mutate(health_2003 = ER23501) %>% mutate(health_2005 = ER27469) %>% mutate(health_2007 = ER40640) %>% mutate(health_2009 = ER46618) %>% mutate(health_2011 = ER51979) %>% mutate(health_2013 = ER57748) %>% mutate(health_2015 = ER27469) %>% mutate(health_2017 = ER71048) %>% mutate(income_2001 = ER20456) %>% mutate( income_2003 = ER24099) %>%  mutate(income_2005 = ER28037) %>% mutate(income_2007 = ER41027) %>% mutate(income_2009 = ER46935) %>% mutate(income_2011 = ER52343) %>% mutate(income_2013 = ER58152) %>% mutate(income_2015 = ER65349) %>% mutate(income_2017 = ER71426) %>% mutate(religious_2001 = ER20047) %>% mutate(religious_2003 = ER23483) %>% mutate(religious_2005 = ER27451) %>% mutate(religious_2007 = ER40622) %>% mutate(religious_2009 = ER46600) %>% mutate(religious_2011 = ER51961) %>% mutate(religious_2013 = ER57730) %>% mutate(religious_2015 = ER64910) %>% mutate(religious_2017 = ER71042) %>%
+mutate(combo_2001 = ER20053) %>% mutate(combo_2003 = ER23489) %>% mutate(combo_2005 = ER27457) %>% mutate(combo_2007 = ER40628) %>% mutate(combo_2009 = ER46606) %>% mutate(combo_2011 = ER51967) %>% mutate(combo_2013 = ER57736) %>% mutate(combo_2015 = ER64916) %>% mutate(combo_2017 = ER71044) %>%
+mutate(needy_2001 = ER20059) %>% mutate(needy_2003 = ER23495) %>% mutate(needy_2005 = ER27463) %>% mutate(needy_2007 = ER40634) %>% mutate(needy_2009 = ER46612) %>% mutate(needy_2011 = ER51973) %>% mutate(needy_2013 = ER57742) %>% mutate(needy_2015 = ER64922) %>% mutate(needy_2017 = ER71046) %>%
+ mutate(education_2001 = ER20071) %>% mutate(education_2003 = ER23507) %>% mutate(education_2005 = ER27475) %>% mutate(education_2007 = ER40646) %>% mutate(education_2009 = ER46624) %>% mutate(education_2011 = ER51985) %>% mutate(education_2013 = ER57754) %>% mutate(education_2015 = ER64934) %>% mutate(education_2017 = ER71050) %>%
+mutate(youth_2001 = ER20076) %>% mutate(youth_2003 = ER23513) %>% mutate(youth_2005 = ER27481)%>% mutate(youth_2007 = ER40652) %>% mutate(youth_2009 = ER46630) %>% mutate(youth_2011 = ER51991) %>% mutate(youth_2013 = ER57760) %>% mutate(youth_2015 = ER64940) %>% mutate(youth_2017 = ER71052) %>% 
+
+mutate(culture_2003 = ER23519) %>% mutate(culture_2005 = ER27487)%>% mutate(culture_2007 = ER40658)%>% mutate(culture_2009 = ER46636) %>% mutate(culture_2011 = ER51997) %>% mutate(culture_2013 = ER57766)%>% mutate(culture_2015 = ER64946)%>% mutate(culture_2017 = ER71054)%>% mutate(culture_2005 = ER71052) %>% 
+
+mutate(community_2003 = ER23525) %>% mutate(community_2005 = ER27493) %>% mutate(community_2007 = ER40664) %>% mutate(community_2009 = ER46642) %>% mutate(community_2011 = ER52003) %>% mutate(community_2013 = ER57772) %>% mutate(community_2015 = ER64952) %>% mutate(community_2017 = ER71056) %>%  
+
+mutate(envir_2003 = ER23531) %>% mutate(envir_2005 = ER27499) %>% mutate(envir_2007 = ER40670) %>% mutate(envir_2009 = ER46648) %>% mutate(envir_2011 = ER52009) %>% mutate(envir_2013 = ER57778) %>% mutate(envir_2015 = ER64958) %>% mutate(envir_2017 = ER71058)  %>% 
+
+mutate(int_2003 = ER23537) %>% mutate(int_2005 = ER27505) %>% mutate(int_2007 = ER40676) %>%  mutate(int_2009 = ER46654) %>%  mutate(int_2011 = ER52015) %>%  mutate(int_2013 = ER57784) %>%  mutate(int_2015 = ER64964) %>%  mutate(int_2017 = ER71060) %>%
+  
+mutate(age_2003 = ER21017) %>% mutate(age_2005 = ER25017) %>% mutate(age_2007 = ER36017) %>% mutate(age_2009 = ER42017) %>% mutate(age_2011 = ER47317) %>% mutate(age_2013 = ER53017) %>% mutate(age_2015 = ER60017) %>% mutate(age_2017 = ER66017) %>%
+  
+mutate(sex_2003 = ER21018) %>% mutate(sex_2005 = ER25018) %>% mutate(sex_2007 = ER36018) %>% mutate(sex_2009 = ER42018) %>% mutate(sex_2011 = ER47318) %>% mutate(sex_2013 = ER53018) %>% mutate(sex_2015 = ER60018) %>% mutate(sex_2017 = ER66018) %>%
+
+mutate(college_2003 = ER23446) %>% mutate(college_2005 = ER27413) %>% mutate(college_2007 = ER40585) %>% mutate(college_2009 = ER46563) %>%  mutate(college_2011 = ER51924) %>% mutate(college_2013 = ER57680) %>% mutate(college_2015 = ER64832) %>% mutate(college_2017 = ER70904) %>%
+  
+
+mutate(ethnicity_2003 = ER23430) %>%  mutate(ethnicity_2005 = ER27397) %>%  mutate(ethnicity_2007 = ER40569) %>%  mutate(ethnicity_2009 = ER46547) %>%  mutate(ethnicity_2011 = ER51908) %>%  mutate(ethnicity_2013 = ER57663) %>%  mutate(ethnicity_2015 = ER64815) %>%  mutate(ethnicity_2017 = ER70887) %>%  
+
+mutate(race_2003 = ER23426) %>% mutate(race_2005 = ER27393) %>% mutate(race_2007 = ER40565) %>% mutate(race_2009 = ER46543) %>% mutate(race_2011 = ER51904) %>% mutate(race_2013 = ER57659) %>% mutate(race_2015 = ER64810) %>% mutate(race_2017 = ER70882) %>%
+mutate(religion_2003 = ER23474) %>% mutate(religion_2005 = ER27442) %>% mutate(religion_2007 = ER40614) %>% mutate(religion_2009 = ER46592) %>% mutate(religion_2011 = ER51953) %>% mutate(religion_2013 = ER57709) %>% mutate(religion_2015 = ER64869) %>% mutate(religion_2017 = ER70941) 
+
+
+
+```
+
+
+
+```{r}
+
+attach(file_2001_head)
+
+year = rep(c(2002,2004,2006,2008,2010,2012,2014,2016), each = 7574)
+
+person = rep(file_2001_head$person, 8)
+
+# Demographics
+
+age = c(age_2003,age_2005,age_2007,age_2009,age_2011, age_2013, age_2015, age_2017)
+
+sex = c(sex_2003,sex_2005,sex_2007,sex_2009,sex_2011, sex_2013, sex_2015, sex_2017)
+
+college = c(college_2003,college_2005,college_2007,college_2009,college_2011, college_2013, college_2015, college_2017)
+
+race = c(race_2003,race_2005,race_2007,race_2009,race_2011, race_2013, race_2015, race_2017)
+
+ethnicity = c(ethnicity_2003,ethnicity_2005,ethnicity_2007,ethnicity_2009,ethnicity_2011, ethnicity_2013, ethnicity_2015, ethnicity_2017)
+
+religion = c(religion_2003,religion_2005,religion_2007,religion_2009,religion_2011, religion_2013, religion_2015, religion_2017)
+
+
+
+income = c(income_2003,income_2005,income_2007,income_2009,income_2011, income_2013, income_2015, income_2017)
+
+
+# Donations
+health=c(health_2003,health_2005,health_2007,health_2009,health_2011, health_2013, health_2015, health_2017)
+
+youth <- c(youth_2003,youth_2005,youth_2007,youth_2009,youth_2011, youth_2013, youth_2015, youth_2017)
+
+culture <- c(culture_2003,culture_2005,culture_2007,culture_2009,culture_2011, culture_2013, culture_2015, culture_2017)
+
+community <- c(community_2003,community_2005,community_2007,community_2009,community_2011, community_2013, community_2015, community_2017)
+
+religious = c(religious_2003,religious_2005,religious_2007,religious_2009,religious_2011, religious_2013, religious_2015, religious_2017)
+
+combo = c(combo_2003,combo_2005,combo_2007,combo_2009,combo_2011, combo_2013, combo_2015, combo_2017)
+
+needy = c(needy_2003,needy_2005,needy_2007,needy_2009,needy_2011, needy_2013, needy_2015, needy_2017)
+
+education = c(education_2003,education_2005,education_2007,education_2009,education_2011, education_2013, education_2015, education_2017)
+
+
+int = c(int_2003,int_2005,int_2007,int_2009,int_2011, int_2013, int_2015, int_2017)
+
+envir = c(envir_2003,envir_2005,envir_2007,envir_2009,envir_2011, envir_2013, envir_2015, envir_2017)
+
+
+```
+
+
+```{r}
+
+
+longdata<-data.frame( year, person, age, sex, college, race, ethnicity, religion, income, health, youth, culture, community,  religious, combo, needy, education, int , envir)
+
+
+                     
+attach(longdata)
+
+
+data_gdp <- longdata %>% left_join(data_gdp_ncp, by = "year")
+data_gdp_na <- data_gdp %>% replace_with_na_all(condition = ~.x %in% c(99999, 99998, 999998, 999999, 999998))
+
+
+data_gdp_na$tot_don <- health+ youth+ culture+ community+  religious+ combo+ needy+ education+ int + envir
+
+
+attach(data_gdp_na)
+
+
+data_gdp_na$health_ratio <- health/tot_don
+data_gdp_na$needy_ratio <- needy/tot_don
+
+data_gdp_na <- data_gdp_na %>% group_by(person) %>% mutate(health.ratio.lag = lead(health_ratio, n = 1, default = NA)) 
+
+longdata <- as.data.frame(data_gdp_na)
+
+longdata <- slide(data = longdata, Var = 'health_ratio', GroupVar = 'person',  NewVar = 'health_ratio_lag', slideBy = -1)
+
+longdata <- slide(data = longdata, Var = 'needy_ratio', GroupVar = 'person',  NewVar = 'needy_ratio_lag', slideBy = -1)
+
+attach(longdata)
+
+longdata <- slide(data = longdata, Var = 'health', GroupVar = 'person',  NewVar = 'health_lag', slideBy = -1)
+
+longdata <- slide(data = longdata, Var = 'needy', GroupVar = 'person',  NewVar = 'needy_lag', slideBy = -1)
+
+
+
+
+View(cbind(person, year, needy_ratio, needy_ratio_lag))
+
+```
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+reg_health_ratio<-lmer(health_ratio~GDP+ income + health_ratio_lag + (1|person), data=longdata)
+reg_needy_ratio<-lmer(needy_ratio~ income + GDP + needy_ratio_lag  + (1|person), data=longdata)
+
+summary(m1)
+summary(m2)
+
+```
+
